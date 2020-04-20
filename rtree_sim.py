@@ -8,11 +8,18 @@ import random
 import time
 
 randomSeed = 0  # Need random seed to perform test
-num_targets = 1000
-num_actors = 10000
+num_targets = 100
+num_actors = 1000
 
 ROOT = os.getcwd()
 outputFile = os.path.abspath(os.path.join(ROOT, ".."))
+
+timeEvalFile_path = os.path.join(outputFile, 'Desktop\\rtree_Stats.csv')
+if os.path.isfile(timeEvalFile_path):
+    timeEvalFile = pd.read_csv(timeEvalFile_path)
+else:
+    timeEvalFile = pd.DataFrame([], columns=['NumOfTargets', 'NumOfActors', 'TimeToProcessActors (s)',
+                                             'TimeToProcessScenario (s)'], index=[0])
 
 
 def _build_rtree(locations):
@@ -106,8 +113,10 @@ if __name__ == '__main__':
     start = time.clock()
 
     actors_caught = actors_in_collect(actors_gen, locs)
-    actorsInTargets = len(actors_caught)  # if multiple actors were caught in the same targeted box this will create another column
-    print("time to process %s actors and %s locations: %.03f s" % (num_actors, actorsInTargets, (time.clock() - start)))
+    actorsInTargets = len(
+        actors_caught)  # if multiple actors were caught in the same targeted box this will create another column
+    timeProcessActors = time.clock() - start
+    print("time to process %s actors and %s locations: %.03f s" % (num_actors, actorsInTargets, (timeProcessActors)))
     actors_caught = pd.DataFrame(actors_caught)
     colNames = []
     for i in range(len(actors_caught.columns)):
@@ -129,4 +138,10 @@ if __name__ == '__main__':
     actorScenario.to_csv(os.path.join(outputFile, "Desktop\\Actors_location.csv"), index=False)
 
     # Python time.clock is deprecated, but process_time and perf_counter does not send back ns
-    print("time to process whole event: %.03f s" % ((time.clock() - start)))
+    entireEventTime = time.clock() - start
+    print("time to process whole event: %.03f s" % (entireEventTime))
+    timeEvalFile_cols = timeEvalFile.columns
+    timeEvalFile = timeEvalFile.append({timeEvalFile_cols[0]: num_targets, timeEvalFile_cols[1]: num_actors,
+                                        timeEvalFile_cols[2]: timeProcessActors,
+                                        timeEvalFile_cols[3]: entireEventTime}, True).dropna().reset_index(drop=True)
+    timeEvalFile.to_csv(timeEvalFile_path, index=False)
