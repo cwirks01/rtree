@@ -1,15 +1,29 @@
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import pandas as pd
+import os
 
-tgt_actor_location = pd.read_csv("C:\\Users\\cwirk\\Desktop\\Collections.csv")
+ROOT = os.getcwd()
+filePath = os.path.abspath(os.path.join(ROOT, ".."))
 
-# tgt_coord = tgt_actor_location.apply(lambda x: pd.Series(x['Coordinates']),
-#                                      axis=1).stack().reset_index(level=1, drop=True)
+actor_location = pd.read_csv(os.path.join(filePath, "Desktop\\Collections.csv"))
+tgt_location = pd.read_csv(os.path.join(filePath, "Desktop\\Target_deck.csv"))
 
-new_col_list = ['Left', 'bottom', 'right', 'top']
-for n,col in enumerate(new_col_list):
-    tgt_actor_location[col] = tgt_actor_location['Coordinates'].apply(lambda location: location[n])
+tgt_location['height'] = tgt_location['top'] - tgt_location['bottom']
+tgt_location['width'] = tgt_location['right'] - tgt_location['left']
+tgt_location = pd.DataFrame(tgt_location)
 
-tgt_actor_location = tgt_actor_location.drop('Coordinates', axis=1)
+fig, ax = plt.subplots()
+current_axes = plt.gca()
+
+for index, target in tgt_location.iterrows():
+    rect = patches.Rectangle((int(target['left']), int(target['bottom'])), int(target['width']),
+                             int(target['height']), linewidth=1, edgecolor='r', facecolor='none')
+    current_axes.add_patch(rect)
 
 
+ax.scatter(actor_location['left'], actor_location['bottom'], alpha=0.5)
+plt.title('Target Deck with Caught Actors')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.show()

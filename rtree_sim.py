@@ -117,9 +117,11 @@ if __name__ == '__main__':
     actors_caught = actors_caught.stack().reset_index(drop=True)
     actors_caught = pd.DataFrame(actors_caught.tolist(), columns=['Location', 'Actors', 'Coordinates'])
 
-    new_col_list = ['Left', 'bottom', 'right', 'top']
+    new_col_list = ['left', 'bottom', 'right', 'top']
     for n, col in enumerate(new_col_list):
         actors_caught[col] = actors_caught['Coordinates'].apply(lambda location: location[n])
+        locs[col] = locs['Coordinates'].apply(lambda location: location[n])
+    locs = locs.drop('Coordinates', axis=1)
     actors_caught = actors_caught.drop('Coordinates', axis=1)
 
     actors_caught.to_csv(os.path.join(outputFile, "Desktop\\Collections.csv"), index=False)
