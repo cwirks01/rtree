@@ -22,7 +22,7 @@ for index, target in tgt_location.iterrows():
     current_axes.add_patch(rect)
 
 
-ax.scatter(actor_location['left'], actor_location['bottom'], alpha=0.5)
+ax.scatter(actor_location['left'], actor_location['bottom'], s=1, color='black')
 plt.title('Target Deck with Caught Actors')
 plt.xlabel('x')
 plt.ylabel('y')
