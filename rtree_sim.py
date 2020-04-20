@@ -7,13 +7,12 @@ from rtree.index import Rtree
 import random
 import time
 
-
-
 randomSeed = 0  # Need random seed to perform test
 num_targets = 1000
 num_actors = 10000
 
 ROOT = os.getcwd()
+outputFile = os.path.abspath(os.path.join(ROOT, ".."))
 
 
 def _build_rtree(locations):
@@ -49,17 +48,22 @@ def generate_actors(num_of_actors):
     return actors
 
 
-def actors_in_collect(actors):
+def actors_in_collect(actors, targetDeck):
     """
     This will be the method to find if the actors are in our target deck
     This will have a true and false statement where if true will return the actors id and coordinates as well as which
     box, or "target deck", they are in
     """
     all_collects = []
-    for actor in actors['coord']:
-        hits = list(idx.intersection(actor[0], objects=True))
-        collected = ((actor[1], item.object, tuple(item.bbox)) for item in hits if item.id == 5555)
+    for i, target in targetDeck.iterrows():
+        hits = list(idx.intersection(target['Coordinates'], objects=True))
+        collected = [(target[1], item.object, tuple(item.bbox)) for item in hits]
         all_collects.append(collected)
+    #
+    # for actor in actors['coord']:
+    #     hits = list(idx.intersection(actor[0], objects=True))
+    #     collected = [(actor[1], item.object, tuple(item.bbox)) for item in hits if item.id == 5555]
+    #     all_collects.append(collected)
     return all_collects
 
 
@@ -96,13 +100,13 @@ if __name__ == '__main__':
     tgt_location = build_tgt_deck()
     locs = pd.DataFrame(tgt_location['coord'], columns=['Coordinates', 'Site'])
     _build_rtree(actors_gen)
-    _build_rtree(tgt_location)
+    # _build_rtree(tgt_location) # Testing to evaluate targets separately from R-tree
 
     # Starting time after scenario is built
     start = time.clock()
 
-    actors_caught = actors_in_collect(actors_gen)
-    actorsInTargets = len(actors_caught) # if multiple actors were caught in the same targeted box this will create another column
+    actors_caught = actors_in_collect(actors_gen, locs)
+    actorsInTargets = len(actors_caught)  # if multiple actors were caught in the same targeted box this will create another column
     print("time to process %s actors and %s locations: %.03f s" % (num_actors, actorsInTargets, (time.clock() - start)))
     actors_caught = pd.DataFrame(actors_caught)
     colNames = []
@@ -110,16 +114,17 @@ if __name__ == '__main__':
         colNames.append('Collections%s' % (i + 1))
     actors_caught.columns = colNames
     actors_caught = actors_caught.dropna(subset=['Collections1'])
-    actors_caught = pd.DataFrame(actors_caught['Collections1'].tolist(), columns=['Actors', 'Location', 'Coordinates'])
+    actors_caught = actors_caught.stack().reset_index(drop=True)
+    actors_caught = pd.DataFrame(actors_caught.tolist(), columns=['Location', 'Actors', 'Coordinates'])
 
     new_col_list = ['Left', 'bottom', 'right', 'top']
     for n, col in enumerate(new_col_list):
         actors_caught[col] = actors_caught['Coordinates'].apply(lambda location: location[n])
     actors_caught = actors_caught.drop('Coordinates', axis=1)
 
-    actors_caught.to_csv("C:\\Users\\cwirk\\Desktop\\Collections.csv", index=False)
-    locs.to_csv("C:\\Users\\cwirk\\Desktop\\Target_deck.csv", index=False)
-    actorScenario.to_csv("C:\\Users\\cwirk\\Desktop\\Actors_location.csv", index=False)
+    actors_caught.to_csv(os.path.join(outputFile, "Desktop\\Collections.csv"), index=False)
+    locs.to_csv(os.path.join(outputFile, "Desktop\\Target_deck.csv"), index=False)
+    actorScenario.to_csv(os.path.join(outputFile, "Desktop\\Actors_location.csv"), index=False)
 
     # Python time.clock is deprecated, but process_time and perf_counter does not send back ns
     print("time to process whole event: %.03f s" % ((time.clock() - start)))
