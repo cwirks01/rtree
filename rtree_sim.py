@@ -1,13 +1,10 @@
-import rtree as rt
 import os
 import pandas as pd
-import numpy as np
 from rtree import index
-from rtree.index import Rtree
 import random
 import time
 
-RANDOMSEED = 0  # Need random seed to perform test
+random.seed(0)  # Need random seed to perform test
 NUM_TARGETS = 1000
 NUM_ACTORS = 10000
 
@@ -44,7 +41,6 @@ def generate_actors(num_of_actors=NUM_ACTORS):
     """
     actors = dict()
     actors_loc = []
-    random.seed(RANDOMSEED)
     for i in range(num_of_actors):
         randomPoint_x, randomPoint_y = (random.randint(0, 1000), random.randint(0, 1000))
         loc = ((randomPoint_x, randomPoint_y, randomPoint_x, randomPoint_y), "Actor: " + str(i))
@@ -76,7 +72,6 @@ def build_tgt_deck(num_targets=NUM_TARGETS):
     """
     t_new = dict()
     tgt_deck = []
-    random.seed(RANDOMSEED)
     for i in range(num_targets):
         randomPoint_x, randomPoint_y = (random.randint(10, 1000), random.randint(10, 1000))
         width, height = (random.randint(1, 5) * 2, random.randint(1, 5) * 2)
