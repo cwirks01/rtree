@@ -4,20 +4,39 @@ from rtree import index
 import random
 import time
 
+# initialize constants
 random.seed(0)  # Need random seed to perform test
 NUM_TARGETS = 1000
 NUM_ACTORS = 10000
-
 ROOT = os.getcwd()
-outputFile = os.path.abspath(os.path.join(ROOT, ".."))
 
-#  Creating a file that will keep track of the statistics of the run
-timeEvalFile_path = os.path.join(outputFile, 'Desktop\\rtree_Stats.csv')
-if os.path.isfile(timeEvalFile_path):
-    timeEvalFile = pd.read_csv(timeEvalFile_path)
-else:
-    timeEvalFile = pd.DataFrame([], columns=['NumOfTargets', 'NumOfActors', 'TimeToProcessActors (s)',
-                                             'TimeToProcessScenario (s)'], index=[0])
+
+def create_directory(path):
+    """
+    Creates filepath if it doesn't already exist
+
+    :param path: filepath to create
+    :type path: str
+    """
+    if not os.path.exists(outputFile):
+        os.mkdir(outputFile)
+
+
+def init_stats(path):
+    """
+    Creates data structure that will keep track of the run statistics
+    :param path: filepath to create
+    :type path: str
+    :return: stats tracker and associated filepath (pd.DataFrame, str)
+    :rtype: tuple
+    """
+    timeEvalFile_path = os.path.join(path, 'rtree_Stats.csv')
+    if os.path.isfile(timeEvalFile_path):
+        timeEvalFile = pd.read_csv(timeEvalFile_path)
+    else:
+        timeEvalFile = pd.DataFrame([], columns=['NumOfTargets', 'NumOfActors', 'TimeToProcessActors (s)',
+                                                 'TimeToProcessScenario (s)'], index=[0])
+    return timeEvalFile, timeEvalFile_path
 
 
 def _build_rtree(locations, rtreeIdx):
@@ -87,6 +106,14 @@ def build_tgt_deck(num_targets=NUM_TARGETS):
 
 # Run script here
 if __name__ == '__main__':
+
+    # create results directory
+    outputFile = os.path.join(ROOT, 'results')
+    create_directory(outputFile)
+
+    # create stats
+    timeEvalFile, timeEvalFile_path = init_stats(outputFile)
+
     p = index.Property()
     idx = index.Index(properties=p)
     actors_gen = generate_actors()
@@ -104,7 +131,7 @@ if __name__ == '__main__':
     # if multiple actors were caught in the same targeted box this will create another column
     actorsInTargets = len(actors_caught)
     timeProcessActors = time.perf_counter() - start
-    print("time to process %s actors and %s locations: %.03f s" % (NUM_ACTORS, actorsInTargets, (timeProcessActors)))
+    print("time to process %s actors and %s locations: %.03f s" % (NUM_ACTORS, actorsInTargets, timeProcessActors))
     actors_caught = pd.DataFrame(actors_caught)
     colNames = []
     for i in range(len(actors_caught.columns)):
@@ -122,13 +149,13 @@ if __name__ == '__main__':
     locs = locs.drop('Coordinates', axis=1)
     actors_caught = actors_caught.drop('Coordinates', axis=1)
 
-    actors_caught.to_csv(os.path.join(outputFile, "Desktop\\Collections.csv"), index=False)
-    locs.to_csv(os.path.join(outputFile, "Desktop\\Target_deck.csv"), index=False)
-    actorScenario.to_csv(os.path.join(outputFile, "Desktop\\Actors_location.csv"), index=False)
+    actors_caught.to_csv(os.path.join(outputFile, "Collections.csv"), index=False)
+    locs.to_csv(os.path.join(outputFile, "Target_deck.csv"), index=False)
+    actorScenario.to_csv(os.path.join(outputFile, "Actors_location.csv"), index=False)
 
     # Python time.clock is deprecated, but process_time and perf_counter does not send back ns
     entireEventTime = time.perf_counter() - start
-    print("time to process whole event: %.03f s" % (entireEventTime))
+    print("time to process whole event: %.03f s" % entireEventTime)
     timeEvalFile_cols = timeEvalFile.columns
     timeEvalFile = timeEvalFile.append({timeEvalFile_cols[0]: NUM_TARGETS, timeEvalFile_cols[1]: NUM_ACTORS,
                                         timeEvalFile_cols[2]: timeProcessActors,
